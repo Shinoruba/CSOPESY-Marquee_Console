@@ -11,5 +11,6 @@ bool keyPressed();  // check if a key was pressed (non-blocking)
 char getChar(); // get the character that was pressed (must call after keyPressed)
 void gotoxy(int x, int y);
 void getConsoleSize(int &cols, int &rows);
+void clearLine(int y);  
 
 #endif
