@@ -7,18 +7,14 @@
 class Marquee {
 private:
     std::string text;
-    size_t offset;        // current scroll offset
-    size_t width;         // visible width in characters
     int x, y;
     int dx, dy; // direction deltas
+    int speed;      // movement speed multiplier
 
 public:
     Marquee(const std::string &text);
-
     void update(int maxX, int maxY);
     void draw() const;
-    
-    //std::string getVisibleText() const; // get the current visible part of the message
 };
 
 #endif
