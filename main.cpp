@@ -4,39 +4,45 @@
 #include "marquee.h"
 #include "console_utils.h"
 
-void printHeader() {
+void printHeader()
+{
     std::string headerText = "* Displaying a marquee console! *";
     std::string border(headerText.length(), '*');
 
-    std::cout << border << std::endl;
-    std::cout << headerText << std::endl;
-    std::cout << border << std::endl << std::endl;
+    gotoxy(0, 0);
+    std::cout << border;
+    gotoxy(0, 1);
+    std::cout << headerText;
+    gotoxy(0, 2);
+    std::cout << border;
 }
 
-int main() {
-    const std::string text = "Hello world in marquee!";
-    const size_t displayWidth = 40;
-
-    Marquee marquee(text, displayWidth);
-
-    const int refreshDelay = 100; // in ms
-    const int pollDelay = 10;     // check for key press every 10ms
+int main()
+{
+    Marquee marquee("Hello world in marquee!");
+    const int refreshDelay = 100; // ms
+    const int pollDelay = 10;
 
     int frameCounter = 0;
+
+    int cols, rows;
+    getConsoleSize(cols, rows);
 
     while (true) {
         clearScreen();
 
         // Step 1: Print the fixed banner
         printHeader();
+        std::cout << "\n[Press Q to quit]" << std::endl;
+        marquee.draw();
 
         // Step 2: Display the marquee scroll
-        std::cout << marquee.getVisibleText() << std::endl;
-        std::cout << "\n[Press Q to quit]" << std::endl;
+        //std::cout << marquee.getVisibleText() << std::endl;
+        
 
         // Step 3: Update marquee on refresh tick
         if (frameCounter % (refreshDelay / pollDelay) == 0) {
-            marquee.update();
+            marquee.update(cols, rows);
         }
 
         // Step 4: Handle non-blocking quit

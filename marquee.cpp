@@ -1,25 +1,22 @@
 #include "marquee.h"
+#include "console_utils.h"
+#include <iostream>
 
-Marquee::Marquee(const std::string& text, size_t displayWidth)
-    : message(text + "   "), offset(0), width(displayWidth) {
-    // add spaces at end to create a smooth loop
+Marquee::Marquee(const std::string &text)
+    : text(text), x(0), y(5), dx(1), dy(1) {}
+
+void Marquee::update(int maxX, int maxY)
+{
+    // bounce off walls
+    if (x + text.length() >= maxX || x <= 0) dx = -dx;
+    if (y >= maxY - 1 || y <= 4) dy = -dy; // avoid overlapping header
+
+    x += dx;
+    y += dy;
 }
 
-void Marquee::update()
+void Marquee::draw() const
 {
-    offset = (offset + 1) % message.length();   // move the offset forward and wrap around
-}
-
-std::string Marquee::getVisibleText() const
-{
-    if(offset + width <= message.length())
-    {
-        return message.substr(offset, width);
-    } 
-    else
-    {
-        // if we need to wrap around the message
-        size_t firstPart = message.length() - offset;
-        return message.substr(offset, firstPart) + message.substr(0, width - firstPart);
-    }
+    gotoxy(x, y);
+    std::cout << text;
 }
