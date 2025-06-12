@@ -12,9 +12,14 @@ private:
     int speed;      // movement speed multiplier
 
 public:
-    Marquee(const std::string &text);
+    Marquee(const std::string &text, int speed = 2);
     void update(int maxX, int maxY);
     void draw() const;
+    std::string getText() const { return text; }
+    int getSpeed() const { return speed; }
+    void setSpeed(int newSpeed) { speed = newSpeed; }
+    int getX() const { return x; }
+    int getY() const { return y; }
 };
 
 #endif

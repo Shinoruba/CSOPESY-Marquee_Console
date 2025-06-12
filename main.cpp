@@ -17,45 +17,75 @@ void printHeader()
     std::cout << border;
 }
 
+void printHelp(int cols)
+{
+    gotoxy(0, 3);
+    std::cout << "Commands: [Q]uit [S]peed+ [D]own [H]elp";
+    clearLine(4);  // Clear previous messages
+}
+
 int main()
 {
-    Marquee marquee("Hello world in marquee!");
+    Marquee marquee("Hello world in marquee!", 2);  // initialized with speed=2 for faster movement
     const int refreshDelay = 100; // ms
-    const int pollDelay = 10;
+    const int pollDelay = 50;
 
     int frameCounter = 0;
 
     int cols, rows;
     getConsoleSize(cols, rows);
 
-    while (true) {
-        clearScreen();
+    
+        // Clear screen and draw initial state
+    clearScreen();
+    printHeader();
+    printHelp(cols);
 
-        // Step 1: Print the fixed banner
-        printHeader();
-        std::cout << "\n[Press Q to quit]" << std::endl;
+    // Store previous position for clearing
+    int prevX = marquee.getX();
+    int prevY = marquee.getY();
+
+    while (true) {
+        // Clear previous position
+        gotoxy(prevX, prevY);
+        std::cout << std::string(marquee.getText().length(), ' ');
+
+        // Update and draw
+        marquee.update(cols, rows);
         marquee.draw();
 
-        // Step 2: Display the marquee scroll
-        //std::cout << marquee.getVisibleText() << std::endl;
-        
+        // Store current position for next clear
+        prevX = marquee.getX();
+        prevY = marquee.getY();
 
-        // Step 3: Update marquee on refresh tick
-        if (frameCounter % (refreshDelay / pollDelay) == 0) {
-            marquee.update(cols, rows);
-        }
-
-        // Step 4: Handle non-blocking quit
+        // Handle input
         if (keyPressed()) {
-            char c = getChar();
-            if (c == 'q' || c == 'Q') {
-                std::cout << "\nExiting..." << std::endl;
-                break;
+            char c = tolower(getChar());
+            switch(c) {
+                case 'q':
+                    gotoxy(0, rows - 1);
+                    std::cout << "Exiting...";
+                    return 0;
+                case 's':
+                    marquee.setSpeed(std::min(marquee.getSpeed() + 1, 5));
+                    gotoxy(0, 4);
+                    std::cout << "Speed: " << marquee.getSpeed();
+                    break;
+                case 'd':
+                    marquee.setSpeed(std::max(marquee.getSpeed() - 1, 1));
+                    gotoxy(0, 4);
+                    std::cout << "Speed: " << marquee.getSpeed();
+                    break;
+                case 'h':
+                    printHelp(cols);
+                    break;
+                default:
+                    gotoxy(0, 4);
+                    std::cout << "Unknown command. Type H for help.";
             }
         }
 
         sleepMilliseconds(pollDelay);
-        frameCounter++;
     }
 
     return 0;

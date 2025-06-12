@@ -1,32 +1,40 @@
 #include "marquee.h"
 #include "console_utils.h"
 #include <iostream>
+#include <algorithm>
 
-Marquee::Marquee(const std::string &text)
-    : text(text), x(0), y(5), dx(1), dy(1) {}
+Marquee::Marquee(const std::string &text, int speed)
+    : text(text), x(5), y(5), dx(1), dy(1), speed(speed) {}
 
 void Marquee::update(int maxX, int maxY)
 {
-    // check for horizontal collisions (left and right edges)
-    if (x + text.length() >= maxX || x <= 0) {
-        dx = -dx; // reverse horizontal direction
+    // Update position first
+    x += dx * speed;
+    y += dy * speed;
+
+    // Check for horizontal collisions
+    if (x <= 0) {
+        x = 0;
+        dx = abs(dx); // Force right
     }
-    
-    // check for vertical collisions (top and bottom edges)
-    // we use y <= 3 to avoid overlapping with the header (which occupies rows 0-2)
-    if (y >= maxY - 1 || y <= 3) {
-        dy = -dy; // reverse vertical direction
+    else if (x + text.length() >= maxX) {
+        x = maxX - text.length() - 1;
+        dx = -abs(dx); // Force left
     }
 
-    // update position
-    x += dx;
-    y += dy;
-    
-    // ensure we don't get stuck at edges
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
-    if (x + text.length() >= maxX) x = maxX - text.length() - 1;
-    if (y >= maxY) y = maxY - 1;
+    // Check for vertical collisions
+    if (y <= 3) {  // Below header
+        y = 3;
+        dy = abs(dy); // Force down
+    }
+    else if (y >= maxY - 1) {
+        y = maxY - 1;
+        dy = -abs(dy); // Force up
+    }
+
+    // Ensure we don't get stuck
+    x = std::max(0, std::min(x, maxX - (int)text.length() - 1));
+    y = std::max(3, std::min(y, maxY - 1));
 }
 
 void Marquee::draw() const

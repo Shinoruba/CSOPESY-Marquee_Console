@@ -37,3 +37,13 @@ void getConsoleSize(int &cols, int &rows)
     cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
     rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 }
+
+void clearLine(int y)
+{
+    gotoxy(0, y);
+    DWORD written;
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', csbi.dwSize.X, {0, (SHORT)y}, &written);
+    gotoxy(0, y);
+}
