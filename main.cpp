@@ -27,8 +27,8 @@ void printHelp(int cols)
 int main()
 {
     Marquee marquee("Hello world in marquee!", 2);  // initialized with speed=2 for faster movement
-    const int refreshDelay = 100; // ms
-    const int pollDelay = 50;
+    const int refreshDelay = 100;   // How often to update animation
+    const int pollDelay = 50;   // How often to check for input
 
     int frameCounter = 0;
 
