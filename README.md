@@ -16,4 +16,8 @@ CSOPESY-Marquee_Console/
 
 ---
 
+```
+g++ main.cpp marquee.cpp console_utils.cpp -o marquee.exe
+```
+
 You'll see the marquee message scroll across the console. You can test input responsiveness by typing keys while it runs.
