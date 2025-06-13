@@ -1,6 +1,7 @@
 // main.cpp
 #include <iostream>
 #include <string>
+#include <sstream>
 #include "marquee.h"
 #include "console_utils.h"
 
@@ -17,12 +18,48 @@ void printHeader()
     std::cout << border;
 }
 
-void printHelp(int cols)
+// void printHelp(int cols)
+// {
+//     gotoxy(0, 3);
+//     std::cout << "Commands: [ESC]Quit [1]Speed+ [2]Down- [3]Help";
+//     //clearLine(4);
+//     std::cout << std::string(cols - 42, ' ');   // added some padding spaces to ensure the line is fully written
+// }
+
+void printInputPrompt(int rows, int cols)
 {
-    gotoxy(0, 3);
-    std::cout << "Commands: [Q]uit [S]peed+ [D]own [H]elp";
-    clearLine(4);  // Clear previous messages
+    gotoxy(0, rows - 2);
+    std::cout << "Enter a command for MARQUEE_CONSOLE: ";
+    std::cout << std::string(cols - 35, ' ');   // clear rest of line
 }
+
+void printCommandResult(const std::string& command, int rows, int cols)
+{
+    gotoxy(0, rows - 1);
+    // clears the entire line first
+    std::cout << std::string(cols, ' ');
+    gotoxy(0, rows - 1);
+    std::cout << "  Command processed in MARQUEE_CONSOLE: " << command;
+}
+
+void updateInputDisplay(const std::string& inputBuffer, int rows, int cols)
+{
+    // Clear the input line and redraw it
+    gotoxy(0, rows - 2);
+    std::cout << std::string(cols, ' '); // Clear the entire line
+    gotoxy(0, rows - 2);
+    std::cout << "Enter a command for MARQUEE_CONSOLE: " << inputBuffer;
+    // Position cursor at the end of input
+    gotoxy(35 + inputBuffer.length(), rows - 2);
+}
+
+// void redrawStaticElements(int cols, int rows)
+// {
+//     // Redraw header
+//     printHeader();
+//     // Redraw commands
+//     printHelp(cols);
+// }
 
 int main()
 {
@@ -30,20 +67,22 @@ int main()
     const int refreshDelay = 100;   // How often to update animation
     const int pollDelay = 50;   // How often to check for input
 
-    int frameCounter = 0;
-
     int cols, rows;
     getConsoleSize(cols, rows);
 
     
-        // Clear screen and draw initial state
+    // Clear screen and draw initial state
     clearScreen();
     printHeader();
-    printHelp(cols);
+    // printHelp(cols);
+    printInputPrompt(rows, cols);
 
     // Store previous position for clearing
     int prevX = marquee.getX();
     int prevY = marquee.getY();
+    std::string inputBuffer = "";
+    // bool waitingForInput = false;
+    // int frameCounter = 0;
 
     while (true) {
         // Clear previous position
@@ -51,37 +90,58 @@ int main()
         std::cout << std::string(marquee.getText().length(), ' ');
 
         // Update and draw
-        marquee.update(cols, rows);
+        marquee.update(cols, rows - 3); // Reserve space for input area
+
+        // Check if marquee will interfere with command line
+        // if (marquee.getY() == 3) {
+        //     // Redraw the command line if marquee is on it
+        //     printHelp(cols);
+        // }
+
         marquee.draw();
 
         // Store current position for next clear
         prevX = marquee.getX();
         prevY = marquee.getY();
 
+        // Periodically redraw static elements to prevent corruption
+        // frameCounter++;
+        // if (frameCounter % 50 == 0) { // Every ~2.5 seconds at 50ms delay
+        //     redrawStaticElements(cols, rows);
+        //     printInputPrompt(rows, cols);
+        //     if (!inputBuffer.empty()) {
+        //         updateInputDisplay(inputBuffer, rows, cols);
+        //     }
+        // }
+
         // Handle input
         if (keyPressed()) {
-            char c = tolower(getChar());
-            switch(c) {
-                case 'q':
-                    gotoxy(0, rows - 1);
-                    std::cout << "Exiting...";
-                    return 0;
-                case 's':
-                    marquee.setSpeed(std::min(marquee.getSpeed() + 1, 5));
-                    gotoxy(0, 4);
-                    std::cout << "Speed: " << marquee.getSpeed();
-                    break;
-                case 'd':
-                    marquee.setSpeed(std::max(marquee.getSpeed() - 1, 1));
-                    gotoxy(0, 4);
-                    std::cout << "Speed: " << marquee.getSpeed();
-                    break;
-                case 'h':
-                    printHelp(cols);
-                    break;
-                default:
-                    gotoxy(0, 4);
-                    std::cout << "Unknown command. Type H for help.";
+            char c = getChar();
+            
+            if (c == 27) { // ESC key
+                gotoxy(0, rows - 1);
+                std::cout << "Exiting...";
+                return 0;
+            }
+            else if (c == '\r' || c == '\n') { // Enter key
+                if (!inputBuffer.empty()) {
+                    // Process command - display whatever was typed
+                    printCommandResult(inputBuffer, rows, cols);
+                    inputBuffer.clear();
+                    printInputPrompt(rows, cols);
+                    // Position cursor after the prompt
+                    gotoxy(35, rows - 2);
+                }
+            }
+            else if (c == '\b' || c == 127) { // Backspace
+                if (!inputBuffer.empty()) {
+                    inputBuffer.pop_back();
+                    updateInputDisplay(inputBuffer, rows, cols);
+                }
+            }
+            else if (c >= 32 && c <= 126) { // Printable characters
+                inputBuffer += c;
+                updateInputDisplay(inputBuffer, rows, cols);
             }
         }
 
