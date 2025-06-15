@@ -1,7 +1,7 @@
-// main.cpp
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <chrono>
 #include "marquee.h"
 #include "console_utils.h"
 
@@ -18,19 +18,11 @@ void printHeader()
     std::cout << border;
 }
 
-// void printHelp(int cols)
-// {
-//     gotoxy(0, 3);
-//     std::cout << "Commands: [ESC]Quit [1]Speed+ [2]Down- [3]Help";
-//     //clearLine(4);
-//     std::cout << std::string(cols - 42, ' ');   // added some padding spaces to ensure the line is fully written
-// }
-
 void printInputPrompt(int rows, int cols)
 {
     gotoxy(0, rows - 2);
     std::cout << "Enter a command for MARQUEE_CONSOLE: ";
-    std::cout << std::string(cols - 35, ' ');   // clear rest of line
+    std::cout << std::string(cols - 35, ' ');
 }
 
 void printCommandResult(const std::string& command, int rows, int cols)
@@ -44,28 +36,46 @@ void printCommandResult(const std::string& command, int rows, int cols)
 
 void updateInputDisplay(const std::string& inputBuffer, int rows, int cols)
 {
-    // Clear the input line and redraw it
     gotoxy(0, rows - 2);
-    std::cout << std::string(cols, ' '); // Clear the entire line
+    std::cout << std::string(cols, ' ');
     gotoxy(0, rows - 2);
     std::cout << "Enter a command for MARQUEE_CONSOLE: " << inputBuffer;
-    // Position cursor at the end of input
     gotoxy(35 + inputBuffer.length(), rows - 2);
 }
 
-// void redrawStaticElements(int cols, int rows)
-// {
-//     // Redraw header
-//     printHeader();
-//     // Redraw commands
-//     printHelp(cols);
-// }
-
+// ==================================================================================
 int main()
 {
-    Marquee marquee("Hello world in marquee!", 2);  // initialized with speed=2 for faster movement
-    const int refreshDelay = 100;   // How often to update animation
-    const int pollDelay = 50;   // How often to check for input
+    Marquee marquee("Hello world in marquee!", 2);
+    const int refreshDelay = 40;   // How often to update animation
+    const int pollDelay = 15;   // How often to check for input
+
+    /*
+    const int refreshDelay = 50;   
+    const int pollDelay = 50;
+        standard/default speed for marquee string and text responsiveness
+
+    const int refreshDelay = 25;   
+    const int pollDelay = 50;
+        marquee string bounces around faster than previous test
+
+    const int refreshDelay = 250;
+    const int pollDelay = 50;  
+        marquee string moves slow, and it's "hopping" around, instead of having a flowy feel when its bouncing around
+
+    const int refreshDelay = 50;
+    const int pollDelay = 5; 
+        text is extremely responsive, compared to previous tests
+
+    const int refreshDelay = 50;  
+    const int pollDelay = 250;
+        text is extremely UNRESPONSIVE, compared to previous test
+
+    const int refreshDelay = 40;  
+    const int pollDelay = 15;
+        PERFECT BALANCE
+
+    */ 
 
     int cols, rows;
     getConsoleSize(cols, rows);
@@ -74,78 +84,67 @@ int main()
     // Clear screen and draw initial state
     clearScreen();
     printHeader();
-    // printHelp(cols);
     printInputPrompt(rows, cols);
 
     // Store previous position for clearing
     int prevX = marquee.getX();
     int prevY = marquee.getY();
     std::string inputBuffer = "";
-    // bool waitingForInput = false;
-    // int frameCounter = 0;
+
+    auto lastRefresh = std::chrono::steady_clock::now();
+    auto lastPoll = std::chrono::steady_clock::now();
 
     while (true) {
-        // Clear previous position
-        gotoxy(prevX, prevY);
-        std::cout << std::string(marquee.getText().length(), ' ');
+        auto now = std::chrono::steady_clock::now();
+        
+        // Update animation only at refresh rate
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastRefresh).count() >= refreshDelay) {
+            gotoxy(prevX, prevY);
+            std::cout << std::string(marquee.getText().length(), ' ');
 
-        // Update and draw
-        marquee.update(cols, rows - 3); // Reserve space for input area
+            marquee.update(cols, rows - 3);
+            marquee.draw();
 
-        // Check if marquee will interfere with command line
-        // if (marquee.getY() == 3) {
-        //     // Redraw the command line if marquee is on it
-        //     printHelp(cols);
-        // }
-
-        marquee.draw();
-
-        // Store current position for next clear
-        prevX = marquee.getX();
-        prevY = marquee.getY();
-
-        // Periodically redraw static elements to prevent corruption
-        // frameCounter++;
-        // if (frameCounter % 50 == 0) { // Every ~2.5 seconds at 50ms delay
-        //     redrawStaticElements(cols, rows);
-        //     printInputPrompt(rows, cols);
-        //     if (!inputBuffer.empty()) {
-        //         updateInputDisplay(inputBuffer, rows, cols);
-        //     }
-        // }
-
-        // Handle input
-        if (keyPressed()) {
-            char c = getChar();
+            prevX = marquee.getX();
+            prevY = marquee.getY();
             
-            if (c == 27) { // ESC key
-                gotoxy(0, rows - 1);
-                std::cout << "Exiting...";
-                return 0;
-            }
-            else if (c == '\r' || c == '\n') { // Enter key
-                if (!inputBuffer.empty()) {
-                    // Process command - display whatever was typed
-                    printCommandResult(inputBuffer, rows, cols);
-                    inputBuffer.clear();
-                    printInputPrompt(rows, cols);
-                    // Position cursor after the prompt
-                    gotoxy(35, rows - 2);
+            lastRefresh = now;
+        }
+
+        // Check input only at polling rate
+        if(std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() >= pollDelay) {
+            if(keyPressed()) {
+                char c = getChar();
+                
+                if(c == 27) {
+                    gotoxy(0, rows - 1);
+                    std::cout << "Exiting...";
+                    return 0;
                 }
-            }
-            else if (c == '\b' || c == 127) { // Backspace
-                if (!inputBuffer.empty()) {
-                    inputBuffer.pop_back();
+                else if(c == '\r' || c == '\n') {
+                    if (!inputBuffer.empty()) {
+                        printCommandResult(inputBuffer, rows, cols);
+                        inputBuffer.clear();
+                        printInputPrompt(rows, cols);
+                        gotoxy(35, rows - 2);
+                    }
+                }
+                else if(c == '\b' || c == 127) {
+                    if (!inputBuffer.empty()) {
+                        inputBuffer.pop_back();
+                        updateInputDisplay(inputBuffer, rows, cols);
+                    }
+                }
+                else if(c >= 32 && c <= 126) {
+                    inputBuffer += c;
                     updateInputDisplay(inputBuffer, rows, cols);
                 }
             }
-            else if (c >= 32 && c <= 126) { // Printable characters
-                inputBuffer += c;
-                updateInputDisplay(inputBuffer, rows, cols);
-            }
+            
+            lastPoll = now;
         }
 
-        sleepMilliseconds(pollDelay);
+        sleepMilliseconds(1);
     }
 
     return 0;

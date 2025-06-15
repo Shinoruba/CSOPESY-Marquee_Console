@@ -8,31 +8,27 @@ Marquee::Marquee(const std::string &text, int speed)
 
 void Marquee::update(int maxX, int maxY)
 {
-    // Update position first
     x += dx * speed;
     y += dy * speed;
 
-    // Check for horizontal collisions
-    if (x <= 0) {
+    if(x <= 0) {
         x = 0;
-        dx = abs(dx); // Force right
+        dx = abs(dx);
     }
-    else if (x + text.length() >= maxX) {
+    else if(x + text.length() >= maxX) {
         x = maxX - text.length() - 1;
-        dx = -abs(dx); // Force left
+        dx = -abs(dx);
     }
 
-    // Check for vertical collisions
-    if (y <= 3) {  // Below header
+    if(y <= 3) {
         y = 3;
-        dy = abs(dy); // Force down
+        dy = abs(dy);
     }
-    else if (y >= maxY - 1) {
+    else if(y >= maxY - 1) {
         y = maxY - 1;
-        dy = -abs(dy); // Force up
+        dy = -abs(dy);
     }
 
-    // Ensure we don't get stuck
     x = std::max(0, std::min(x, maxX - (int)text.length() - 1));
     y = std::max(3, std::min(y, maxY - 1));
 }
